@@ -4,6 +4,7 @@ import os
 import glob
 import time
 import datetime
+import json
 
 os.system('modprobe w1-gpio')
 os.system('modprobe w1-therm')
@@ -14,6 +15,11 @@ device_folder2 = glob.glob(base_dir + '28*cce')[0]
 device_file1 = device_folder1 + '/w1_slave'
 device_file2 = device_folder2 + '/w1_slave'
 
+data = {}
+ts = time.time()
+dt = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+data['timestamp'] = dt
+
 def read_temp_raw1():
 	f1 = open(device_file1, 'r')
 	lines1 = f1.readlines()
@@ -21,6 +27,7 @@ def read_temp_raw1():
 	return lines1
 
 def read_temp1():
+	temp1Cal = -3.2
 	lines = read_temp_raw1()
 	while lines[0].strip()[-3:] != 'YES':
 		time.sleep(0.2)
@@ -30,6 +37,7 @@ def read_temp1():
 		temp_string = lines[1][equals_pos+2:]
 		temp_c = float(temp_string) / 1000.0
 		temp_f = temp_c * 9.0 / 5.0 + 32.0
+		temp_f = temp_f + temp1Cal
 		return temp_f
 
 def read_temp_raw2():
@@ -39,6 +47,7 @@ def read_temp_raw2():
 	return lines2
 
 def read_temp2():
+	temp2Cal = .87
 	lines = read_temp_raw2()
 	while lines[0].strip()[-3:] != 'YES':
 		time.sleep(0.2)
@@ -48,9 +57,13 @@ def read_temp2():
 		temp_string = lines[1][equals_pos+2:]
 		temp_c = float(temp_string) / 1000.0
 		temp_f = temp_c * 9.0 / 5.0 + 32.0
+		temp_f = temp_f + temp2Cal
 		return temp_f
 
-ts = time.time()
-st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-print(st, "temp1="+str(read_temp1()), "temp2="+str(read_temp2()))
+data['temp1']= str(read_temp1())
+data['temp2']= str(read_temp2())
+
+json_data = json.dumps(data, sort_keys=True)
+
+print(json_data)
 time.sleep(1)
